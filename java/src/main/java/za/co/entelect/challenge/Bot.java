@@ -34,9 +34,8 @@ public class Bot {
         if (gameState.currentWormId==2)
         {
             //Error di line bawah
-            if (currentWorm.bananas.count>0)
+            if (currentWorm.bananaBombs.count>0)
             {
-                System.out.println(currentWorm.bananas.count);
                 //BananaCommand udah jalan
                 return new BananaCommand(currentWorm.position.x-3,currentWorm.position.y-3);
             }
@@ -70,7 +69,7 @@ public class Bot {
 
     private boolean canBananaBomb(){
         if (currentWorm.id==2 ) {
-            return currentWorm.bananas.count>0;
+            return currentWorm.bananaBombs.count>0;
         }
         else {
             return false;
