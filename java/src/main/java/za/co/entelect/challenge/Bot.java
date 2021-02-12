@@ -30,18 +30,20 @@ public class Bot {
     }
 
     public Command run() {
-        //banana bomb
-        if (gameState.currentWormId==2)
-        {
-            //Error di line bawah
-            if (currentWorm.bananaBombs.count>0)
-            {
-                //BananaCommand udah jalan
-                return new BananaCommand(currentWorm.position.x-3,currentWorm.position.y-3);
-            }
+
+        Position target;
+        target = canBananaBomb();
+        if (target.x != -999){
+            return new BananaCommand(target.x, target.y);
+        }
+        //snowball
+        target = canSnowball();
+        if (target.x != -999){
+            return new SnowCommand(target.x, target.y);
         }
 
-        //snowball
+
+
 
         //cek musuh
         Worm enemyWorm = getFirstWormInRange();
@@ -67,13 +69,51 @@ public class Bot {
         return new DoNothingCommand();
     }
 
-    private boolean canBananaBomb(){
+    private Position canBananaBomb(){
+        int min=99999999;
+        int temp;
+        Position target= new Position();
+        target.x = -999;
+        target.y = -999;
+
         if (currentWorm.id==2 ) {
-            return currentWorm.bananaBombs.count>0;
+            if (currentWorm.bananaBombs.count>0){
+                for (Worm enemyWorm : opponent.worms) {
+                    temp = euclideanDistance(currentWorm.position.x, currentWorm.position.y, enemyWorm.position.x, enemyWorm.position.y);
+
+                    if (temp < min && temp <= currentWorm.bananaBombs.range){
+                        min = temp;
+                        target.x = enemyWorm.position.x;
+                        target.y = enemyWorm.position.y;
+                    }
+                }
+            }
         }
-        else {
-            return false;
+        return target;
+    }
+
+    private Position canSnowball(){
+        int min=99999999;
+        int temp;
+
+        Position target= new Position();
+        target.x = -999;
+        target.y = -999;
+
+        if (currentWorm.id==3 ) {
+            if (currentWorm.snowballs.count>0){
+                for (Worm enemyWorm : opponent.worms) {
+                    temp = euclideanDistance(currentWorm.position.x, currentWorm.position.y, enemyWorm.position.x, enemyWorm.position.y);
+
+                    if (temp < min && temp <= currentWorm.snowballs.range){
+                        min = temp;
+                        target.x = enemyWorm.position.x;
+                        target.y = enemyWorm.position.y;
+                    }
+                }
+            }
         }
+        return target;
     }
 
     private Worm getFirstWormInRange() {
@@ -115,6 +155,51 @@ public class Bot {
                 if (cell.type != CellType.AIR) {
                     break;
                 }
+
+                directionLine.add(cell);
+            }
+            directionLines.add(directionLine);
+        }
+
+        return directionLines;
+    }
+
+    private Worm getClosestzWorm(int range) {
+
+        Set<String> cells = constructThrowingLines(range)
+                .stream()
+                .flatMap(Collection::stream)
+                .map(cell -> String.format("%d_%d", cell.x, cell.y))
+                .collect(Collectors.toSet());
+
+        for (Worm enemyWorm : opponent.worms) {
+            String enemyPosition = String.format("%d_%d", enemyWorm.position.x, enemyWorm.position.y);
+            if (cells.contains(enemyPosition)) {
+                return enemyWorm;
+            }
+        }
+
+        return null;
+    }
+
+    private List<List<Cell>> constructThrowingLines(int range) {
+        List<List<Cell>> directionLines = new ArrayList<>();
+        for (Direction direction : Direction.values()) {
+            List<Cell> directionLine = new ArrayList<>();
+            for (int directionMultiplier = 1; directionMultiplier <= range; directionMultiplier++) {
+
+                int coordinateX = currentWorm.position.x + (directionMultiplier * direction.x);
+                int coordinateY = currentWorm.position.y + (directionMultiplier * direction.y);
+
+                if (!isValidCoordinate(coordinateX, coordinateY)) {
+                    break;
+                }
+
+                if (euclideanDistance(currentWorm.position.x, currentWorm.position.y, coordinateX, coordinateY) > range) {
+                    break;
+                }
+
+                Cell cell = gameState.map[coordinateY][coordinateX];
 
                 directionLine.add(cell);
             }
