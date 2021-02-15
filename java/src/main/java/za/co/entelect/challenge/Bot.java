@@ -42,8 +42,21 @@ public class Bot {
             return new SnowCommand(target.x, target.y);
         }
 
-
-
+        //cek musuh terdekat
+        Worm closestWorm = getClosestEnemies(50); //range changeable
+        //shortest movement (MoveDig)
+        if (closestWorm != null){
+            Direction closeDirection = resolveDirection(currentWorm.position, closestWorm.position);
+            Cell targetBlock = getEnemyCell(50,closestWorm);
+            if(targetBlock != null)
+            {
+                if (targetBlock.type == CellType.AIR) {
+                    return new MoveCommand(targetBlock.x, targetBlock.y);
+                } else if (targetBlock.type == CellType.DIRT) {
+                    return new DigCommand(targetBlock.x, targetBlock.y);
+                }
+            }
+        }
 
         //cek musuh
         Worm enemyWorm = getFirstWormInRange();
@@ -52,8 +65,6 @@ public class Bot {
             Direction direction = resolveDirection(currentWorm.position, enemyWorm.position);
             return new ShootCommand(direction);
         }
-
-        //shortest movement (MoveDig)
 
         //random movement
         List<Cell> surroundingBlocks = getSurroundingCells(currentWorm.position.x, currentWorm.position.y);
@@ -182,6 +193,46 @@ public class Bot {
         return null;
     }
 
+    private Worm getClosestEnemies(int range) {
+        boolean found;
+        found = false;
+        Worm tempWorm = new Worm();
+        int minDistance=999;
+        int tempDistance;
+        Set<String> cells = constructThrowingLines(range)
+                .stream()
+                .flatMap(Collection::stream)
+                .map(cell -> String.format("%d_%d", cell.x, cell.y))
+                .collect(Collectors.toSet());
+
+        for (Worm enemyWorm : opponent.worms) {
+            String enemyPosition = String.format("%d_%d", enemyWorm.position.x, enemyWorm.position.y);
+            if (cells.contains(enemyPosition)) {
+                if (!found)
+                {
+                    found = true;
+                    minDistance = euclideanDistance(currentWorm.position.x, currentWorm.position.y, enemyWorm.position.x, enemyWorm.position.y);
+                    tempWorm = enemyWorm;
+                }
+                else
+                {
+                    tempDistance = euclideanDistance(currentWorm.position.x, currentWorm.position.y, enemyWorm.position.x, enemyWorm.position.y);
+                    if (tempDistance < minDistance)
+                    {
+                        minDistance = tempDistance;
+                        tempWorm = enemyWorm;
+                    }
+                }
+            }
+        }
+
+        if (found)
+        {
+            return tempWorm;
+        }
+        return null;
+    }
+
     private List<List<Cell>> constructThrowingLines(int range) {
         List<List<Cell>> directionLines = new ArrayList<>();
         for (Direction direction : Direction.values()) {
@@ -207,6 +258,45 @@ public class Bot {
         }
 
         return directionLines;
+    }
+
+    //fungsi buat throwline akan mengembalikan garis yang akan digunakan
+    private List<Cell> createEnemyLine(int range, Worm enemy){
+        List<Cell> directionLine = new ArrayList<>();
+        Direction direction = resolveDirection(currentWorm.position, enemy.position);
+        for (int directionMultiplier = 1; directionMultiplier <= range; directionMultiplier++) {
+
+            int coordinateX = currentWorm.position.x + (directionMultiplier * direction.x);
+            int coordinateY = currentWorm.position.y + (directionMultiplier * direction.y);
+
+            if (!isValidCoordinate(coordinateX, coordinateY)) {
+                break;
+            }
+
+            if (euclideanDistance(currentWorm.position.x, currentWorm.position.y, coordinateX, coordinateY) > range) {
+                break;
+            }
+
+            Cell cell = gameState.map[coordinateY][coordinateX];
+
+            directionLine.add(cell);
+        }
+        return directionLine;
+    }
+
+    //fungsi buat throwline akan mengembalikan garis yang akan digunakan
+    private Cell getEnemyCell(int range, Worm enemy){
+        Cell targetCell = new Cell();
+        targetCell = null;
+        Direction direction = resolveDirection(currentWorm.position, enemy.position);
+        int coordinateX = currentWorm.position.x + (direction.x);
+        int coordinateY = currentWorm.position.y + (direction.y);
+        Cell cell = gameState.map[coordinateY][coordinateX];
+        if(isValidCoordinate(coordinateX,coordinateY))
+        {
+            targetCell = cell;
+        }
+        return targetCell;
     }
 
     private List<Cell> getSurroundingCells(int x, int y) {
