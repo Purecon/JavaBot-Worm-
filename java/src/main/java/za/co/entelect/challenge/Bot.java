@@ -32,10 +32,15 @@ public class Bot {
     public Command run() {
 
         Position target;
+        //BananaBomb lowhealth
+        target = canBananaBomb();
+        if (target.x != -999 && !friendlyFire(target,true) && currentWorm.health<=60){
+            return new BananaCommand(target.x, target.y);
+        }
 
         //snowball
         target = canSnowball();
-        if (target.x != -999 && getClosestWorm(currentWorm).roundsUntilUnfrozen <=1){
+        if (target.x != -999 && getClosestWorm(currentWorm).roundsUntilUnfrozen <=1 && !friendlyFire(target,false)){
             return new SnowCommand(target.x, target.y);
         }
 
@@ -53,6 +58,24 @@ public class Bot {
         if(gameState.myPlayer.remainingWormSelections>0 && busyWorm != null) {
             Worm enemyWorm1 = getFirstWormInRange(busyWorm);
             return new SelectCommand(busyWorm, resolveDirection(busyWorm.position, enemyWorm1.position));
+        }
+
+        //NonTechno to enemy_techno
+        Worm techEnemy = GetEnemyWorm(3);
+        if (currentWorm.id != 3 && techEnemy.health>0) {
+            //cek jarak (kalo udah weapon range skip)
+            if (euclideanDistance(currentWorm.position.x, currentWorm.position.y, techEnemy.position.x, techEnemy.position.y) > currentWorm.weapon.range){
+                //Shortest movement ke technologist
+                Cell targetBlock = getEnemyCell(techEnemy);
+                if(targetBlock != null &&  !wormInCell(targetBlock, true))
+                {
+                    if (targetBlock.type == CellType.AIR) {
+                        return new MoveCommand(targetBlock.x, targetBlock.y);
+                    } else if (targetBlock.type == CellType.DIRT) {
+                        return new DigCommand(targetBlock.x, targetBlock.y);
+                    }
+                }
+            }
         }
 
         //PROTECT TECHNOLOGIST
@@ -91,7 +114,7 @@ public class Bot {
 
         //BananaBomb
         target = canBananaBomb();
-        if (target.x != -999){
+        if (target.x != -999 && !friendlyFire(target,true)){
             return new BananaCommand(target.x, target.y);
         }
 
@@ -226,18 +249,9 @@ public class Bot {
     }
 
     private Worm getClosestWorm(Worm W) {
-
-//        Set<String> cells = constructThrowingLines(range)
-//                .stream()
-//                .flatMap(Collection::stream)
-//                .map(cell -> String.format("%d_%d", cell.x, cell.y))
-//                .collect(Collectors.toSet());
         Worm tempWorm = null;
         float distance = 9999;
         for (Worm enemyWorm : opponent.worms) {
-//            if (cells.contains(enemyPosition)) {
-//                return enemyWorm;
-//            }
             if (enemyWorm.health > 0) {
                 float temp = euclideanDistance(W.position.x, W.position.y, enemyWorm.position.x, enemyWorm.position.y);
                 if (temp < distance) {
@@ -410,6 +424,15 @@ public class Bot {
         return null;
     }
 
+    public Worm GetEnemyWorm(int id){
+        for (Worm worm : opponent.worms){
+            if (worm.id == id){
+                return worm;
+            }
+        }
+        return null;
+    }
+
     public MyWorm getBusyWorm(){
         for (MyWorm worm : gameState.myPlayer.worms){
 
@@ -438,12 +461,43 @@ public class Bot {
         return false;
     }
 
-//    public boolean friendlyFire(Position P, int r){
-//        int i, j, friend, enemy;
-//        for (i= P.x-r;i<=P.x+r;i++){
-//            for(j = P.y-r;j<=P.y+r;j++){
-//                if ()
-//            }
-//        }
-//    }
+    public boolean friendlyFire(Position P, boolean bn){
+        //if true don't attack
+        //kalau musuh>temen attack
+        int count_musuh = 0;
+        int count_teman = 0;
+        int temp_radius = 0;
+        if (bn)
+        {
+            temp_radius = currentWorm.bananaBombs.damageRadius;
+        }
+        else
+        {
+            temp_radius = currentWorm.snowballs.freezeRadius;
+        }
+        for (Direction direction : Direction.values()) {
+            for (int directionMultiplier = 1; directionMultiplier <= temp_radius; directionMultiplier++) {
+                //kalau banana directionMultiplier == temp_radius dia hanya "N" "E" "W" "S"
+                if (!bn || (bn && directionMultiplier<temp_radius) || (bn && Math.pow(direction.x,2)+Math.pow(direction.y,2)==1))
+                {
+                    int coordinateX = currentWorm.position.x + (directionMultiplier * direction.x);
+                    int coordinateY = currentWorm.position.y + (directionMultiplier * direction.y);
+
+                    for (MyWorm worm : gameState.myPlayer.worms){
+                        if (worm.position.x == coordinateX && worm.position.y == coordinateY && worm.health>0){
+                            //tambahin counter
+                            count_teman++;
+                        }
+                    }
+                    for (Worm worm : opponent.worms){
+                        if (worm.position.x == coordinateX && worm.position.y == coordinateY && worm.health>0){
+                            //tambahin counter
+                            count_musuh++;
+                        }
+                    }
+                }
+            }
+        }
+        return count_musuh<count_teman;
+    }
 }
