@@ -13,4 +13,6 @@ public class MyWorm extends Worm {
     //snowball
     @SerializedName("snowballs")
     public Snowballs snowballs;
+
+
 }
