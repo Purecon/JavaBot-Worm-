@@ -10,6 +10,8 @@ public class ShootCommand implements Command {
         this.direction = direction;
     }
 
+    public String GetDirection(){return this.direction.name();}
+
     @Override
     public String render() {
         return String.format("shoot %s", direction.name());

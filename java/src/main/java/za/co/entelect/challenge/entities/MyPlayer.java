@@ -3,6 +3,9 @@ package za.co.entelect.challenge.entities;
 import com.google.gson.annotations.SerializedName;
 
 public class MyPlayer {
+    @SerializedName("remainingWormSelections")
+    public int remainingWormSelections;
+
     @SerializedName("id")
     public int id;
 

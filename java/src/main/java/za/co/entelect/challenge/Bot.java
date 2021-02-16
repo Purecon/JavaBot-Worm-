@@ -31,7 +31,14 @@ public class Bot {
 
     public Command run() {
 
+        //Select
+        if(gameState.myPlayer.remainingWormSelections>0) {
+            Worm enemyWorm1 = getClosestWorm();
+            return new SelectCommand(GetWorm(1), resolveDirection(GetWorm(1).position, enemyWorm1.position));
+        }
+
         Position target;
+        //BananaBomb
         target = canBananaBomb();
         if (target.x != -999){
             return new BananaCommand(target.x, target.y);
@@ -42,12 +49,19 @@ public class Bot {
             return new SnowCommand(target.x, target.y);
         }
 
+        //cek musuh
+        Worm enemyWorm = getFirstWormInRange();
+        //shoot
+        if (enemyWorm != null) {
+            Direction direction = resolveDirection(currentWorm.position, enemyWorm.position);
+            return new ShootCommand(direction);
+        }
+
         //cek musuh terdekat
-        Worm closestWorm = getClosestEnemies(50); //range changeable
+        Worm closestWorm = getClosestWorm(); //range changeable
         //shortest movement (MoveDig)
         if (closestWorm != null){
-            Direction closeDirection = resolveDirection(currentWorm.position, closestWorm.position);
-            Cell targetBlock = getEnemyCell(50,closestWorm);
+            Cell targetBlock = getEnemyCell(closestWorm);
             if(targetBlock != null)
             {
                 if (targetBlock.type == CellType.AIR) {
@@ -58,13 +72,7 @@ public class Bot {
             }
         }
 
-        //cek musuh
-        Worm enemyWorm = getFirstWormInRange();
-        //shoot
-        if (enemyWorm != null) {
-            Direction direction = resolveDirection(currentWorm.position, enemyWorm.position);
-            return new ShootCommand(direction);
-        }
+
 
         //random movement
         List<Cell> surroundingBlocks = getSurroundingCells(currentWorm.position.x, currentWorm.position.y);
@@ -137,7 +145,7 @@ public class Bot {
 
         for (Worm enemyWorm : opponent.worms) {
             String enemyPosition = String.format("%d_%d", enemyWorm.position.x, enemyWorm.position.y);
-            if (cells.contains(enemyPosition)) {
+            if (cells.contains(enemyPosition) && enemyWorm.health > 0) {
                 return enemyWorm;
             }
         }
@@ -175,22 +183,29 @@ public class Bot {
         return directionLines;
     }
 
-    private Worm getClosestzWorm(int range) {
+    private Worm getClosestWorm() {
 
-        Set<String> cells = constructThrowingLines(range)
-                .stream()
-                .flatMap(Collection::stream)
-                .map(cell -> String.format("%d_%d", cell.x, cell.y))
-                .collect(Collectors.toSet());
-
+//        Set<String> cells = constructThrowingLines(range)
+//                .stream()
+//                .flatMap(Collection::stream)
+//                .map(cell -> String.format("%d_%d", cell.x, cell.y))
+//                .collect(Collectors.toSet());
+        Worm tempWorm = null;
+        float distance = 9999;
         for (Worm enemyWorm : opponent.worms) {
-            String enemyPosition = String.format("%d_%d", enemyWorm.position.x, enemyWorm.position.y);
-            if (cells.contains(enemyPosition)) {
-                return enemyWorm;
+//            if (cells.contains(enemyPosition)) {
+//                return enemyWorm;
+//            }
+            if (enemyWorm.health > 0) {
+                float temp = euclideanDistance(currentWorm.position.x, currentWorm.position.x, enemyWorm.position.x, enemyWorm.position.y);
+                if (temp < distance) {
+                    tempWorm = enemyWorm;
+                    distance = temp;
+                }
             }
         }
 
-        return null;
+        return tempWorm;
     }
 
     private Worm getClosestEnemies(int range) {
@@ -285,7 +300,7 @@ public class Bot {
     }
 
     //fungsi buat throwline akan mengembalikan garis yang akan digunakan
-    private Cell getEnemyCell(int range, Worm enemy){
+    private Cell getEnemyCell(Worm enemy){
         Cell targetCell = new Cell();
         targetCell = null;
         Direction direction = resolveDirection(currentWorm.position, enemy.position);
@@ -343,4 +358,14 @@ public class Bot {
 
         return Direction.valueOf(builder.toString());
     }
+
+    public Worm GetWorm(int id){
+        for (Worm worm : gameState.myPlayer.worms){
+            if (worm.id == id){
+                return worm;
+            }
+        }
+        return null;
+    }
+
 }
