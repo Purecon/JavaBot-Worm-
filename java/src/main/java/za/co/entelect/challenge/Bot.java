@@ -34,13 +34,13 @@ public class Bot {
         Position target;
         //BananaBomb lowhealth
         target = canBananaBomb();
-        if (target.x != -999 && !friendlyFire(target,true) && currentWorm.health<=60){
+        if (target.x != -999 && !friendlyFire(target,true) && currentWorm.health<=75){
             return new BananaCommand(target.x, target.y);
         }
 
         //snowball
         target = canSnowball();
-        if (target.x != -999 && getClosestWorm(currentWorm).roundsUntilUnfrozen <=1 && !friendlyFire(target,false)){
+        if (currentWorm.health<=75 && target.x != -999 && getClosestWorm(currentWorm).roundsUntilUnfrozen <=1 && !friendlyFire(target,false)){
             return new SnowCommand(target.x, target.y);
         }
 
@@ -111,6 +111,7 @@ public class Bot {
             }
         }
 
+        //Technologist ke Agent
         Worm agent = GetWorm(2);
         if (currentWorm.id == 3 && agent.health>0) {
             //cek jarak (kalo udah weapon range skip)
@@ -130,6 +131,12 @@ public class Bot {
         target = canBananaBomb();
         if (target.x != -999 && !friendlyFire(target,true)){
             return new BananaCommand(target.x, target.y);
+        }
+
+        //snowball
+        target = canSnowball();
+        if (target.x != -999 && getClosestWorm(currentWorm).roundsUntilUnfrozen <=1 && !friendlyFire(target,false)){
+            return new SnowCommand(target.x, target.y);
         }
 
         //cek musuh terdekat
