@@ -8,4 +8,5 @@ public class Position {
 
     @SerializedName("y")
     public int y;
+
 }

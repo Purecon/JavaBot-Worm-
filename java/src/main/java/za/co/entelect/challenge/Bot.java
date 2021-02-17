@@ -52,6 +52,21 @@ public class Bot {
             return new ShootCommand(direction);
         }
 
+        //cari health di surrounding
+        List <Cell> ListPowerCell = getSurroundingCellsR(currentWorm.position.x,currentWorm.position.y,3);
+        for(Cell ces : ListPowerCell){
+            if(ces.powerUp != null && currentWorm.health <=80){//
+                //gerak ke power up
+                Cell c;
+                c = getPowerDirection(ces);
+                if (c.type == CellType.AIR) {
+                    return new MoveCommand(c.x, c.y);
+                } else if (c.type == CellType.DIRT) {
+                    return new DigCommand(c.x, c.y);
+                }
+            }
+        }
+
         //cek worm rusuh
         MyWorm busyWorm = getBusyWorm();
         //select
@@ -111,7 +126,6 @@ public class Bot {
                 }
             }
         }
-
         //BananaBomb
         target = canBananaBomb();
         if (target.x != -999 && !friendlyFire(target,true)){
@@ -132,7 +146,6 @@ public class Bot {
                 }
             }
         }
-
 
 
         //random movement
@@ -370,6 +383,22 @@ public class Bot {
         return targetCell;
     }
 
+    private Cell getPowerDirection(Cell c){
+        Cell targetCell = new Cell();
+        Position temp = new Position();
+        temp.x = c.x;
+        temp.y = c.y;
+        targetCell = null;
+        Direction direction = resolveDirection(currentWorm.position, temp);
+        int coordinateX = currentWorm.position.x + (direction.x);
+        int coordinateY = currentWorm.position.y + (direction.y);
+        Cell cell = gameState.map[coordinateY][coordinateX];
+        if(isValidCoordinate(coordinateX,coordinateY))
+        {
+            targetCell = cell;
+        }
+        return targetCell;
+    }
     private List<Cell> getSurroundingCells(int x, int y) {
         ArrayList<Cell> cells = new ArrayList<>();
         for (int i = x - 1; i <= x + 1; i++) {
@@ -383,7 +412,19 @@ public class Bot {
 
         return cells;
     }
+    private List<Cell> getSurroundingCellsR(int x, int y, int r) {
+        ArrayList<Cell> cells = new ArrayList<>();
+        for (int i = x - r; i <= x + r; i++) {
+            for (int j = y - r; j <= y + r; j++) {
+                // Don't include the current position
+                if (i != x && j != y && isValidCoordinate(i, j)) {
+                    cells.add(gameState.map[j][i]);
+                }
+            }
+        }
 
+        return cells;
+    }
     private int euclideanDistance(int aX, int aY, int bX, int bY) {
         return (int) (Math.sqrt(Math.pow(aX - bX, 2) + Math.pow(aY - bY, 2)));
     }
