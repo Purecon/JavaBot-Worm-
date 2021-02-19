@@ -231,7 +231,7 @@ public class Bot {
 
         for (Worm enemyWorm : opponent.worms) {
             String enemyPosition = String.format("%d_%d", enemyWorm.position.x, enemyWorm.position.y);
-            if (cells.contains(enemyPosition) && enemyWorm.health > 0 && !weaponFriendlyFire(currentWorm, enemyWorm)) {
+            if (cells.contains(enemyPosition) && enemyWorm.health > 0) {
                 return enemyWorm;
             }
         }
@@ -257,7 +257,7 @@ public class Bot {
                 }
 
                 Cell cell = gameState.map[coordinateY][coordinateX];
-                if (cell.type != CellType.AIR) {
+                if (cell.type != CellType.AIR || wormInCell(cell, true)) {
                     break;
                 }
 
@@ -549,17 +549,6 @@ public class Bot {
         }
         return count_musuh<count_teman;
     }
-    boolean weaponFriendlyFire(Worm friend, Worm enemy){
-        for (Worm worm : gameState.myPlayer.worms){
-            if (worm.id != friend.id){
-                if (resolveDirection(friend.position, worm.position) == resolveDirection(friend.position, enemy.position)){
-                    if (euclideanDistance(friend.position.x, friend.position.y, worm.position.x, worm.position.y) < euclideanDistance(friend.position.x, friend.position.y, enemy.position.x, enemy.position.y)){
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
+
 
 }
